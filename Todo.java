@@ -29,9 +29,38 @@ class Todo implements Serializable {
     public static HashMap<String, Todo> loadLists() {
 
         HashMap<String, Todo> ret = new HashMap<>();
+
         // For every file in lists directory:
             // load the corresponding Todo object
             // add it to the ret hashmap.
+        
+        Set<String> fileNames = Stream.of(new File("lists").listFiles())
+        .map(File::getName)
+        .collect(Collectors.toSet());
+        
+        for (String listName : fileNames) {
+            Todo list = loadList(listFileName);
+            if (list != null) {
+                ret.put(list.name, list);
+            } else {
+                System.out.println("ERROR! list " + listName + "couldn't load.");
+            }
+            
+        }
+        
+    }
+
+    protected static Todo loadList(String filename) {
+        // TODO: verify I did this correctly
+        Todo list = null;
+
+        FileInputStream fileIn = new FileInputStream("lists/" + filename); // make sure this is valid
+        ObjectInputStream in = new ObjectInputStream(fileIn);
+        list = in.readObject();
+        in.close();
+        fileIn.close();
+
+        return list;
     }
 
     public static void clear() {
