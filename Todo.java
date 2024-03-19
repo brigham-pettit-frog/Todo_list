@@ -1,11 +1,8 @@
 package todo_list;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.*;
 
-import java.io.Serializable;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 class Todo implements Serializable {
 
@@ -29,9 +26,43 @@ class Todo implements Serializable {
     public static HashMap<String, Todo> loadLists() {
 
         HashMap<String, Todo> ret = new HashMap<>();
+
         // For every file in lists directory:
             // load the corresponding Todo object
             // add it to the ret hashmap.
+        
+        Set<String> fileNames = Stream.of(new File("lists").listFiles())
+        .map(File::getName)
+        .collect(Collectors.toSet());
+        
+        for (String listName : fileNames) {
+            Todo list = loadList(listName);
+            if (list != null) {
+                ret.put(list.name, list);
+            } else {
+                System.out.println("ERROR! list " + listName + " couldn't load.");
+            }
+        }
+
+        return ret;
+        
+    }
+
+    protected static Todo loadList(String filename) {
+        // TODO: verify I did this correctly
+        Todo list = null;
+
+        try {
+            FileInputStream fileIn = new FileInputStream("lists/" + filename); // make sure this is valid
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            list = (Todo)in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (Exception e) {
+            System.out.println("Warning: could not load file " + filename);
+        }
+
+        return list;
     }
 
     public static void clear() {
@@ -39,7 +70,7 @@ class Todo implements Serializable {
         System.out.flush();  
     }
 
-    protected class Section {
+    protected class Section implements Serializable {
         private String name;
         private ArrayList<Item> items = new ArrayList<Item>();
         private boolean collapsed = false; // I can collapse a section.
@@ -66,12 +97,12 @@ class Todo implements Serializable {
         }
     }
 
-    protected class Item {
+    protected class Item implements Serializable {
         private String name;            // name of item
         private boolean completed = false;      // whether it's done
         private Progress progressBar = null;   // progress bar
 
-        protected class Progress {      // class for progress bar
+        protected class Progress implements Serializable {      // class for progress bar
             private float progress;
             protected void show() {
                 // for now, let's represent this as (e.g. 30% = [///      ] )
