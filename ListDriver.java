@@ -275,9 +275,6 @@ public class ListDriver {
 
 /*
  * 
- * 
- * collapse "sectionName"
- * 
  * then: implement flush: flush (currentlist implied), flush list "listname", flush all
  * 
  * then: implement help (list possible commands)
@@ -316,6 +313,6 @@ public class ListDriver {
     7. note -title "Title of the note" "string to remember"
     8. note show
         will show all notes
-    9. note remove -index ind
-    10. note remove -title title
+    9. note remove index ind
+    10. note remove title title
 */

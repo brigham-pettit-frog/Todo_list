@@ -24,14 +24,4 @@ public class StringHelper {
         return false;
     }
 
-    /*
-    public static void main(String[] args) {
-        // make sure it's false when it's false
-
-        System.out.println("expect false (obvious): " + containsSubstring("system", "idk"));
-        System.out.println("expect false (length): " + containsSubstring("something", "longerSomething"));
-        System.out.println("expect true: " + containsSubstring("system fail", "system"));
-        System.out.println("expect true: " + containsSubstring("system fail", "fail"));
-    }
-    */
 }
