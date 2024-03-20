@@ -32,6 +32,7 @@ public class ListDriver {
         String cmd = sc.next();
 
         if (cmd.equals("quit") || cmd.equals("kill") || cmd.equals("q") || cmd.equals("exit")) {
+            scanLine.close();
             return true;
         }
 
@@ -76,6 +77,7 @@ public class ListDriver {
                         
                         currentList = null;
                         clear();
+                        scanLine.close();
                         return false;
                     }
 
@@ -155,10 +157,29 @@ public class ListDriver {
             }
         }
 
+        if (cmd.equals("delete") || cmd.equals("remove")) {
+            cmd = sc.next();
+            if (cmd.equals("item")) {
+                cmd = sc.nextLine().substring(1);
+                if (currentList != null) {
+                    currentList.deleteItem(cmd);
+                }
+            } 
+
+            if (cmd.equals("section")) {
+                // TODO
+            }
+
+            if (cmd.equals("list")) {
+                // TODO
+            }
+        }
+
         if (currentList != null) {
             currentList.show();
         }
 
+        scanLine.close();
         return false;
     }
 
