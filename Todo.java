@@ -12,6 +12,7 @@ class Todo implements Serializable {
     private Section currentSection = null;  // if I'm zoomed into a section, I should remember which it is.
 
     public static void saveList(Todo list) {
+        if (list == null) return;
         try {
             FileOutputStream fileOut = new FileOutputStream("lists/" + list.name + ".list");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -21,6 +22,29 @@ class Todo implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void deleteList(Todo list) {
+        if (list == null) {return;}
+        try {
+            new File("lists/" + list.getName() + ".list").delete();
+        } catch (Exception e) {
+            System.out.println("couldn't delete list file");
+        }
+    }
+
+    public static boolean deleteList(String name) {
+        Set<String> fileNames = Stream.of(new File("lists").listFiles())
+        .map(File::getName)
+        .collect(Collectors.toSet());
+
+        for (String listName : fileNames) {
+            if (StringHelper.containsSubstring(listName, name)) {
+                new File("lists/" + listName).delete();
+                return true;
+            }
+        }
+        return false;
     }
 
     public static HashMap<String, Todo> loadLists() {
@@ -49,7 +73,7 @@ class Todo implements Serializable {
     }
 
     protected static Todo loadList(String filename) {
-        // TODO: verify I did this correctly
+        
         Todo list = null;
 
         try {
@@ -165,7 +189,7 @@ class Todo implements Serializable {
 
     public boolean hasSection(String name) {
         for (Section sec : sections) {  // O(N) but that's okay because I don't expect a large number of sections in a list.
-            if (sec.name.equals(name)) {
+            if (StringHelper.containsSubstring(sec.name, name)) {
                 return true;
             }
         }
@@ -239,12 +263,13 @@ class Todo implements Serializable {
         return null;
     }
 
-    public void deleteSection(String name) {
-        try {
-            sections.remove(getSection(name));
-        } catch (Exception e) {
-            System.out.println("Couldn't remove section " + name);
+    public boolean deleteSection(String name) {
+        Section sec = getSection(name);
+        if (sec != null) {
+            sections.remove(sec);
+            return true;
         }
+        return false;
     }
 
     public void deleteItem(String sectionName, String itemName) {
@@ -259,14 +284,25 @@ class Todo implements Serializable {
         }
     }
 
-    public void deleteItem(String itemName) {
+    public boolean deleteItem(String itemName) {
         for (Section sec : sections) { 
             for (Item item : sec.items) {
                 if (StringHelper.containsSubstring(item.name, itemName)) {
                     sec.items.remove(item);
-                    return;
+                    return true;
                 }
             }
+        }
+        return false;
+    }
+
+    public boolean collapse(String sectionName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            sec.collapsed = true;
+            return true;
+        } else {
+            return false;
         }
     }
 
