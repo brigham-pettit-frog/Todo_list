@@ -129,7 +129,7 @@ class Todo implements Serializable {
             } else {
                 System.out.print("✓ ");
             }
-            System.out.print(name);
+            System.out.print(name + '\t');
             if (progressBar != null) {
                 progressBar.show();
             }
@@ -146,7 +146,12 @@ class Todo implements Serializable {
         }
 
         protected void updateProgress(int progress) { // as percentage, i.e., 30% = updateProgress(30);
-            progressBar = new Progress(30);
+            if (progressBar == null) {
+                progressBar = new Progress(progress);
+            } else {
+                progressBar.progress = progress;
+            }
+            
         }
     }
 
@@ -178,10 +183,43 @@ class Todo implements Serializable {
         return null;
     }
 
+    protected Item getItem(String sectionName, String itemName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            for (Item i : sec.items) {
+                if (StringHelper.containsSubstring(i.name, itemName)) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected Item getItem(Section sec, String itemName) {
+        if (sec != null) {
+            for (Item i : sec.items) {
+                if (StringHelper.containsSubstring(i.name, itemName)) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void updateProgress(String query, int progress) {
+        Item item = getItem(query);
+        if (item != null) {
+            item.updateProgress(progress);
+        }
+    }
+
     public void completeItem(String query) {
         Item item = getItem(query);
         if (item != null) {
             item.completed=true;
+            if (item.progressBar != null) {
+                item.progressBar.progress = 100;
+            }
         }
     }
 
@@ -194,11 +232,31 @@ class Todo implements Serializable {
 
     protected Section getSection(String name) {
         for (Section sec : sections) {  
-            if (sec.name.equals(name)) {
+            if (StringHelper.containsSubstring(sec.name, name)) { // returns only the first section matching this, be careful.
                 return sec;
             }
         }
         return null;
+    }
+
+    public void deleteSection(String name) {
+        try {
+            sections.remove(getSection(name));
+        } catch (Exception e) {
+            System.out.println("Couldn't remove section " + name);
+        }
+    }
+
+    public void removeItem(String sectionName, Sring itemName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            try {
+                section.items.remove(getItem(sec, itemName));
+            } catch (Exception e) {
+                System.out.println("Couldn't remove item " + itemName);
+            }
+            
+        }
     }
 
     public void show() {
