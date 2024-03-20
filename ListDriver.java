@@ -2,6 +2,7 @@ package todo_list;
 
 import java.util.Scanner;
 import java.util.HashMap;
+import java.util.Map;
 
 
 
@@ -62,7 +63,13 @@ public class ListDriver {
                     cmd = sc.next();
 
                     if (cmd.equals("exit")) {       // list exit
+                        
+                        if (currentList != null) {  // save the list if there's a list to save
+                            Todo.saveList(currentList);
+                        }
+                        
                         currentList = null;
+                        clear();
                         return false;
                     }
 
@@ -108,7 +115,12 @@ public class ListDriver {
                 
             }
             if (cmd.equals("section")) {    // add section
-                cmd = sc.nextLine().substring(1);                     // add section name (clear the initial whitespace)
+                try {
+                    cmd = sc.nextLine().substring(1);                     // add section name (clear the initial whitespace)
+                } catch (Exception e) {
+                    error("What section?");
+                }
+                
                 if(currentList == null) {
                     error("no list selected");
                 } else {
@@ -146,10 +158,25 @@ public class ListDriver {
 
     public static void main(String[] args) {
 
-        while(true) {
-            if(await_input()) {
-                break;
+        // load existing lists 
+
+        lists = Todo.loadLists();
+
+        try {
+            while(true) {
+                if(await_input()) {
+                    break;
+                }
             }
+        } catch (Exception e) {
+            error("there was a fatal exception.");
+            e.printStackTrace();
+        }
+
+        // save lists
+        for (Map.Entry<String, Todo> entry : lists.entrySet()) {
+            Todo list = entry.getValue();
+            Todo.saveList(list);
         }
 
     }
