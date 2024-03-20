@@ -12,6 +12,7 @@ class Todo implements Serializable {
     private Section currentSection = null;  // if I'm zoomed into a section, I should remember which it is.
 
     public static void saveList(Todo list) {
+        if (list == null) return;
         try {
             FileOutputStream fileOut = new FileOutputStream("lists/" + list.name + ".list");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -21,6 +22,29 @@ class Todo implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void deleteList(Todo list) {
+        if (list == null) {return;}
+        try {
+            new File("lists/" + list.getName() + ".list").delete();
+        } catch (Exception e) {
+            System.out.println("couldn't delete list file");
+        }
+    }
+
+    public static boolean deleteList(String name) {
+        Set<String> fileNames = Stream.of(new File("lists").listFiles())
+        .map(File::getName)
+        .collect(Collectors.toSet());
+
+        for (String listName : fileNames) {
+            if (StringHelper.containsSubstring(listName, name)) {
+                new File("lists/" + listName).delete();
+                return true;
+            }
+        }
+        return false;
     }
 
     public static HashMap<String, Todo> loadLists() {
@@ -49,7 +73,7 @@ class Todo implements Serializable {
     }
 
     protected static Todo loadList(String filename) {
-        // TODO: verify I did this correctly
+        
         Todo list = null;
 
         try {
@@ -129,7 +153,7 @@ class Todo implements Serializable {
             } else {
                 System.out.print("✓ ");
             }
-            System.out.print(name);
+            System.out.print(name + '\t');
             if (progressBar != null) {
                 progressBar.show();
             }
@@ -146,7 +170,12 @@ class Todo implements Serializable {
         }
 
         protected void updateProgress(int progress) { // as percentage, i.e., 30% = updateProgress(30);
-            progressBar = new Progress(30);
+            if (progressBar == null) {
+                progressBar = new Progress(progress);
+            } else {
+                progressBar.progress = progress;
+            }
+            
         }
     }
 
@@ -160,7 +189,7 @@ class Todo implements Serializable {
 
     public boolean hasSection(String name) {
         for (Section sec : sections) {  // O(N) but that's okay because I don't expect a large number of sections in a list.
-            if (sec.name.equals(name)) {
+            if (StringHelper.containsSubstring(sec.name, name)) {
                 return true;
             }
         }
@@ -178,10 +207,43 @@ class Todo implements Serializable {
         return null;
     }
 
+    protected Item getItem(String sectionName, String itemName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            for (Item i : sec.items) {
+                if (StringHelper.containsSubstring(i.name, itemName)) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected Item getItem(Section sec, String itemName) {
+        if (sec != null) {
+            for (Item i : sec.items) {
+                if (StringHelper.containsSubstring(i.name, itemName)) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void updateProgress(String query, int progress) {
+        Item item = getItem(query);
+        if (item != null) {
+            item.updateProgress(progress);
+        }
+    }
+
     public void completeItem(String query) {
         Item item = getItem(query);
         if (item != null) {
             item.completed=true;
+            if (item.progressBar != null) {
+                item.progressBar.progress = 100;
+            }
         }
     }
 
@@ -194,11 +256,54 @@ class Todo implements Serializable {
 
     protected Section getSection(String name) {
         for (Section sec : sections) {  
-            if (sec.name.equals(name)) {
+            if (StringHelper.containsSubstring(sec.name, name)) { // returns only the first section matching this, be careful.
                 return sec;
             }
         }
         return null;
+    }
+
+    public boolean deleteSection(String name) {
+        Section sec = getSection(name);
+        if (sec != null) {
+            sections.remove(sec);
+            return true;
+        }
+        return false;
+    }
+
+    public void deleteItem(String sectionName, String itemName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            try {
+                sec.items.remove(getItem(sec, itemName));
+            } catch (Exception e) {
+                System.out.println("Couldn't remove item " + itemName);
+            }
+            
+        }
+    }
+
+    public boolean deleteItem(String itemName) {
+        for (Section sec : sections) { 
+            for (Item item : sec.items) {
+                if (StringHelper.containsSubstring(item.name, itemName)) {
+                    sec.items.remove(item);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean collapse(String sectionName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            sec.collapsed = true;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void show() {

@@ -20,6 +20,14 @@ public class ListDriver {
         System.out.println("Error: " + msg);
     }
     
+    private static String restOfLine(Scanner sc) {
+        if (sc.hasNextLine()) {
+            return sc.nextLine().substring(1);
+        } else {
+            return "";
+        }
+    }
+
     private static boolean await_input() {
         System.out.print("input command: ");
 
@@ -29,18 +37,28 @@ public class ListDriver {
 
         Scanner sc = new Scanner(line);
 
-        String cmd = sc.next();
+        String cmd = "";
+
+        cmd = sc.next();
+        
 
         if (cmd.equals("quit") || cmd.equals("kill") || cmd.equals("q") || cmd.equals("exit")) {
             return true;
         }
 
-        if (cmd.equals("clear")) {
+        else if (cmd.equals("clear")) {
             clear();
+            return false;
         }
 
-        if (cmd.equals("complete")) { // complete
-            cmd = sc.nextLine();
+        else if (cmd.equals("progress")) { // progress
+            int prog = sc.nextInt();
+            cmd = restOfLine(sc);
+            currentList.updateProgress(cmd, prog);
+        }
+
+        else if (cmd.equals("complete")) { // complete
+            cmd = restOfLine(sc);
 
             if (currentList != null) {
                 currentList.completeItem(cmd);
@@ -48,9 +66,10 @@ public class ListDriver {
 
         }
 
-        if (cmd.equals("list")) {                                       // list
+        else if (cmd.equals("list")) {                                       // list
             if (lists.size() == 0 && !sc.hasNext()) {
                 error("no lists to report.");
+                return false;
             } else if (lists.size() == 1) {
                 currentList = lists.get(lists.keySet().iterator().next());
                 currentList.show();
@@ -94,6 +113,7 @@ public class ListDriver {
                 if (!lists.containsKey(cmd)) {
                     error("No such list exists.");
                 } else {
+                    Todo.saveList(currentList);
                     currentList = lists.get(cmd);
                     currentList.show();
                 }
@@ -102,12 +122,13 @@ public class ListDriver {
 
         }
 
-        if (cmd.equals("add")) {            // add
+        else if (cmd.equals("add") || cmd.equals("make")) {            // add
             cmd = sc.next();
             if (cmd.equals("list")) {       // add list
                 cmd = sc.next();                     // add list "cmd"
                 if (!lists.containsKey(cmd)) {
                     lists.put(cmd, new Todo(cmd));
+                    Todo.saveList(currentList);
                     currentList = lists.get(cmd);
                 } else {
                     error("A list already exists with name: " + cmd);
@@ -116,7 +137,7 @@ public class ListDriver {
             }
             if (cmd.equals("section")) {    // add section
                 try {
-                    cmd = sc.nextLine().substring(1);                     // add section name (clear the initial whitespace)
+                    cmd = restOfLine(sc);                     // add section name (clear the initial whitespace)
                 } catch (Exception e) {
                     error("What section?");
                 }
@@ -135,17 +156,85 @@ public class ListDriver {
             }
 
             if (cmd.equals("item")) {               // add item
-                cmd = sc.next(); // expect a section name.   // add item "section"
+                cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
                 if(currentList == null) {
                     error("no list selected");
                 } else {
                     if(!currentList.hasSection(cmd)) {
                         error("no section exists named: " + cmd);
                     } else {
-                        line = sc.nextLine();
+                        line = restOfLine(sc);
                         currentList.addItem(cmd, line);    // add item "section" "item"
                     }
                 }
+            }
+        }
+
+        else if (cmd.equals("delete") || cmd.equals("remove")) {         // delete
+            cmd = sc.next();
+            if (cmd.equals("item")) {
+                cmd = restOfLine(sc);
+                if (currentList != null) {
+                    currentList.deleteItem(cmd);  
+                }
+            } 
+
+            else if (cmd.equals("section")) {
+                cmd = restOfLine(sc);
+                if (currentList != null) {
+                    currentList.deleteSection(cmd);
+                }
+            }
+
+            else if (cmd.equals("list")) {
+                cmd = restOfLine(sc);
+                Todo list = null;
+                for (String listName : lists.keySet()) {
+                    if (StringHelper.containsSubstring(listName, cmd)) { // grab the first match
+                        list = lists.get(listName);
+                        lists.remove(list.getName());
+                        break;
+                    }
+                }
+
+                if (list != null) {
+                    if (currentList != null) {
+                        if (currentList.getName().equals(list.getName())) {
+                            currentList = null;
+                        }
+                    }
+                    Todo.deleteList(list);
+                } else {
+                    if (!Todo.deleteList(cmd)) {
+                        error("couldn't delete list " + cmd);
+                    }
+                } 
+            }
+
+            else {  // assume I'm trying to remove an item first, then assume a section.
+                cmd = restOfLine(sc);
+                boolean success = false;
+                if (currentList != null) {
+                    if (currentList.deleteItem(cmd)) {
+                        success = true;
+                    } else {
+                        if (currentList.deleteSection(cmd)) {
+                            success = true;
+                        }
+                    }
+                }
+
+                if (!success) {
+                    error("couldn't delete item or section named " + cmd);
+                }
+                
+            }
+        }
+
+        else if (cmd.equals("collapse")) {
+            cmd = restOfLine(sc);
+            if (currentList != null) {
+                currentList.collapse(cmd);
             }
         }
 
@@ -185,10 +274,19 @@ public class ListDriver {
 
 
 /*
- * then: be able to delete a specific item
- * then: implement flush
+*   
+*   REFACTOR: make a string checker? method for checking equality of inputs
+*   REFACTOR: make independent methods for each command.
+*   
+*   Allow 'expand "sectionName"'
+*
+ * FIX BUG: when I say "remove 'itemName'", it only removes the first item on the list.
+ * FIX BUG: when I say "remove list" without an itemName, it starts physically deleting lists.
+ *  -- just add a confirmation prompt.
  * 
- * then: make things persistent
+ * then: implement flush: flush (currentlist implied), flush list "listname", flush all
+ * 
+ * then: implement help (list possible commands)
  */
 
 /* desired commands/features: 
@@ -210,7 +308,7 @@ public class ListDriver {
         will add an item with the given name.
     3.75 add item "name"
         will add the item with the given name -- ONLY IF AFTER SECTION command.
-    4. progress "itemName" percent
+    4. progress percent "itemName" 
         will create or modify a progress bar on this item at a given progress level.
     5. flush
         will remove all completed items from the list.
@@ -224,6 +322,6 @@ public class ListDriver {
     7. note -title "Title of the note" "string to remember"
     8. note show
         will show all notes
-    9. note remove -index ind
-    10. note remove -title title
+    9. note remove index ind
+    10. note remove title title
 */
