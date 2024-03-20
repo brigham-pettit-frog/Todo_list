@@ -25,19 +25,33 @@ public class ListDriver {
 
         Scanner scanLine = new Scanner(System.in);
 
-        String line = scanLine.nextLine();
+        String line = "";
+
+        while (!scanLine.hasNextLine()) {
+            scanLine.close();
+            scanLine = new Scanner(System.in);
+        }
 
         Scanner sc = new Scanner(line);
 
-        String cmd = sc.next();
+        String cmd = "";
+
+        if (sc.hasNext()) {
+            cmd = sc.next();
+        }
+        
 
         if (cmd.equals("quit") || cmd.equals("kill") || cmd.equals("q") || cmd.equals("exit")) {
+            sc.close();
             scanLine.close();
             return true;
         }
 
         if (cmd.equals("clear")) {
             clear();
+            sc.close();
+            scanLine.close();
+            return false;
         }
 
         if (cmd.equals("progress")) { // progress
@@ -58,6 +72,9 @@ public class ListDriver {
         if (cmd.equals("list")) {                                       // list
             if (lists.size() == 0 && !sc.hasNext()) {
                 error("no lists to report.");
+                sc.close();
+                scanLine.close();
+                return false;
             } else if (lists.size() == 1) {
                 currentList = lists.get(lists.keySet().iterator().next());
                 currentList.show();
@@ -77,6 +94,7 @@ public class ListDriver {
                         
                         currentList = null;
                         clear();
+                        sc.close();
                         scanLine.close();
                         return false;
                     }
@@ -93,6 +111,7 @@ public class ListDriver {
                         System.out.println();
 
                         line = scanLine.nextLine();
+                        sc.close();
                         sc = new Scanner(line);
                         cmd = sc.next();                    // list, then, "name"
                     }
@@ -167,11 +186,19 @@ public class ListDriver {
             } 
 
             if (cmd.equals("section")) {
-                // TODO
+                cmd = sc.nextLine().substring(1);
+                if (currentList != null) {
+                    currentList.deleteSection(cmd);
+                }
             }
 
             if (cmd.equals("list")) {
-                // TODO
+                cmd = sc.nextLine().substring(1);
+                for (String listName : lists.keySet()) {
+                    if (StringHelper.containsSubstring(listName, cmd)) { // grab the first match
+                        lists.remove(lists.get(listName));
+                    }
+                }
             }
         }
 
@@ -179,6 +206,7 @@ public class ListDriver {
             currentList.show();
         }
 
+        sc.close();
         scanLine.close();
         return false;
     }

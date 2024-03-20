@@ -247,15 +247,26 @@ class Todo implements Serializable {
         }
     }
 
-    public void deleteItem(String sectionName, Sring itemName) {
+    public void deleteItem(String sectionName, String itemName) {
         Section sec = getSection(sectionName);
         if (sec != null) {
             try {
-                section.items.remove(getItem(sec, itemName));
+                sec.items.remove(getItem(sec, itemName));
             } catch (Exception e) {
                 System.out.println("Couldn't remove item " + itemName);
             }
             
+        }
+    }
+
+    public void deleteItem(String itemName) {
+        for (Section sec : sections) { 
+            for (Item item : sec.items) {
+                if (StringHelper.containsSubstring(item.name, itemName)) {
+                    sec.items.remove(item);
+                    return;
+                }
+            }
         }
     }
 
