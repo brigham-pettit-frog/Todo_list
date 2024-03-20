@@ -39,6 +39,12 @@ public class ListDriver {
             clear();
         }
 
+        if (cmd.equals("progress")) { // progress
+            int prog = sc.nextInt();
+            cmd = sc.nextLine().substring(1);
+            currentList.updateProgress(cmd, prog);
+        }
+
         if (cmd.equals("complete")) { // complete
             cmd = sc.nextLine();
 
@@ -135,7 +141,7 @@ public class ListDriver {
             }
 
             if (cmd.equals("item")) {               // add item
-                cmd = sc.next(); // expect a section name.   // add item "section"
+                cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
                 if(currentList == null) {
                     error("no list selected");
                 } else {
@@ -185,10 +191,17 @@ public class ListDriver {
 
 
 /*
- * then: be able to delete a specific item
- * then: implement flush
+ * make sections identifiable by hints like items
  * 
- * then: make things persistent
+ * then: be able to delete a specific item
+ * then: delete section
+ * then: delete lists
+ * 
+ * collapse "sectionName"
+ * 
+ * then: implement flush: flush (currentlist implied), flush list "listname", flush all
+ * 
+ * then: implement help (list possible commands)
  */
 
 /* desired commands/features: 
@@ -210,7 +223,7 @@ public class ListDriver {
         will add an item with the given name.
     3.75 add item "name"
         will add the item with the given name -- ONLY IF AFTER SECTION command.
-    4. progress "itemName" percent
+    4. progress percent "itemName" 
         will create or modify a progress bar on this item at a given progress level.
     5. flush
         will remove all completed items from the list.
