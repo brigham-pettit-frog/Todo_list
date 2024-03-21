@@ -274,6 +274,9 @@ public class ListDriver {
 
 
 /*
+ * FIX BUG: when I say "remove 'itemName'", it only removes the first item on the list.
+ * FIX BUG: when I say "remove list" without an itemName, it starts physically deleting lists.
+ *  -- just add a confirmation prompt.
  * 
  * then: implement flush: flush (currentlist implied), flush list "listname", flush all
  * 
