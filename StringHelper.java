@@ -10,7 +10,7 @@ public class StringHelper {
         int N = s1.length();
         int n = s2.length();
 
-        if (n > N) {
+        if (n > N || n == 0) {
             return false;
         }
 

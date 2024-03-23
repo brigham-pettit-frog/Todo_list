@@ -306,6 +306,16 @@ class Todo implements Serializable {
         }
     }
 
+    public boolean expand(String sectionName) {
+        Section sec = getSection(sectionName);
+        if (sec != null) {
+            sec.collapsed = false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void show() {
         clear();
         System.out.println(name + "\n\n");
