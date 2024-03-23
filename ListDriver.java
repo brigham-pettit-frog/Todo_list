@@ -11,15 +11,19 @@ public class ListDriver {
     private static HashMap<String, Todo> lists = new HashMap<>();
     private static Todo currentList = null;
 
-    private static void clear() {
-        System.out.print("\033[H\033[2J");  
-        System.out.flush();  
+    private static Scanner scanLine;
+    private static String line;
+    private static Scanner sc;
+    private static String cmd;
+
+    private static void accept_input_line() {
+        scanLine = new Scanner(System.in);
+        line = scanLine.nextLine();
+        sc = new Scanner(line);
+        cmd = "";
+        cmd = sc.next();
     }
 
-    private static void error(String msg) {
-        System.out.println("Error: " + msg);
-    }
-    
     private static String restOfLine(Scanner sc) {
         if (sc.hasNextLine()) {
             return sc.nextLine().substring(1);
@@ -28,98 +32,129 @@ public class ListDriver {
         }
     }
 
-    private static boolean await_input() {
+    private static void prompt_input() {
         System.out.print("input command: ");
+    }
 
-        Scanner scanLine = new Scanner(System.in);
+    private static boolean clear() {
+        System.out.print("\033[H\033[2J");  
+        System.out.flush();  
+        return false;
+    }
 
-        String line = scanLine.nextLine();
+    private static void error(String msg) {
+        System.out.println("Error: " + msg);
+    }
 
-        Scanner sc = new Scanner(line);
+    private static boolean endProgram() {
+        return true;
+    }
 
-        String cmd = "";
+    private static boolean updateProgress() {
+        int prog = sc.nextInt();
+        cmd = restOfLine(sc);
+        currentList.updateProgress(cmd, prog);
+        return false;
+    }
 
-        cmd = sc.next();
+    private static boolean completeItem() {
+        cmd = restOfLine(sc);
+
+        if (currentList != null) {
+            currentList.completeItem(cmd);
+        }
+
+        return false;
+    }
+
+    private static boolean list() {
+        if (lists.size() == 0 && !sc.hasNext()) {
+            error("no lists to report.");
+            return false;
+        } else if (lists.size() == 1) {
+            currentList = lists.get(lists.keySet().iterator().next());
+            currentList.show();
+            return false;
+        } else {
+
+            // list exit will exit from the current list. Otherwise, remain in the current list.
+
+            if (sc.hasNext()) {
+                cmd = sc.next();
+
+                if (cmd.equals("exit")) {       // list exit
+                    
+                    if (currentList != null) {  // save the list if there's a list to save
+                        Todo.saveList(currentList);
+                    }
+                    
+                    currentList = null;
+                    clear();
+                    return false;
+                }
+
+            } else {
+
+                if (currentList != null) {
+                    cmd = currentList.getName();        // list "name"
+                } else {
+                    System.out.println("Select a list: ");
+                    for (String name : lists.keySet()) {
+                        System.out.print(name + " ");
+                    }
+                    System.out.println();
+
+                    line = scanLine.nextLine();
+                    sc = new Scanner(line);
+                    cmd = sc.next();                    // list, then, "name"
+                }
+                
+            }
+
+            if (!lists.containsKey(cmd)) {
+                error("No such list exists.");
+            } else {
+                Todo.saveList(currentList);
+                currentList = lists.get(cmd);
+                currentList.show();
+            }
+            return false;
+        }
         
+    }
+
+
+
+    private static boolean await_input() {
+        prompt_input();
+
+        accept_input_line();
 
         if (cmd.equals("quit") || cmd.equals("kill") || cmd.equals("q") || cmd.equals("exit")) {
-            return true;
+            return endProgram();
         }
 
         else if (cmd.equals("clear")) {
             clear();
-            return false;
+            return false; // don't show the list after clear command.
         }
 
         else if (cmd.equals("progress")) { // progress
-            int prog = sc.nextInt();
-            cmd = restOfLine(sc);
-            currentList.updateProgress(cmd, prog);
+            if (updateProgress()) {
+                return true;
+            }
         }
 
         else if (cmd.equals("complete")) { // complete
-            cmd = restOfLine(sc);
-
-            if (currentList != null) {
-                currentList.completeItem(cmd);
+            if(completeItem()) {
+                return true;
             }
-
         }
 
         else if (cmd.equals("list")) {                                       // list
-            if (lists.size() == 0 && !sc.hasNext()) {
-                error("no lists to report.");
-                return false;
-            } else if (lists.size() == 1) {
-                currentList = lists.get(lists.keySet().iterator().next());
-                currentList.show();
-
-            } else {
-
-                // list exit will exit from the current list. Otherwise, remain in the current list.
-
-                if (sc.hasNext()) {
-                    cmd = sc.next();
-
-                    if (cmd.equals("exit")) {       // list exit
-                        
-                        if (currentList != null) {  // save the list if there's a list to save
-                            Todo.saveList(currentList);
-                        }
-                        
-                        currentList = null;
-                        clear();
-                        return false;
-                    }
-
-                } else {
-
-                    if (currentList != null) {
-                        cmd = currentList.getName();        // list "name"
-                    } else {
-                        System.out.println("Select a list: ");
-                        for (String name : lists.keySet()) {
-                            System.out.print(name + " ");
-                        }
-                        System.out.println();
-
-                        line = scanLine.nextLine();
-                        sc = new Scanner(line);
-                        cmd = sc.next();                    // list, then, "name"
-                    }
-                    
-                }
-
-                if (!lists.containsKey(cmd)) {
-                    error("No such list exists.");
-                } else {
-                    Todo.saveList(currentList);
-                    currentList = lists.get(cmd);
-                    currentList.show();
-                }
+            if (list()) {
+                return true;
             }
-            
-
         }
 
         else if (cmd.equals("add") || cmd.equals("make")) {            // add
@@ -277,6 +312,7 @@ public class ListDriver {
 *   
 *   REFACTOR: make a string checker? method for checking equality of inputs
 *   REFACTOR: make independent methods for each command.
+* * * * -- refactor in progress. Next task: split up list().
 *   
 *   Allow 'expand "sectionName"'
 *
