@@ -67,6 +67,24 @@ public class ListDriver {
         return false;
     }
 
+    private static getListByName(String name) {
+        for (String listName : lists.keySet()) {
+            if (StringHelper.containsSubstring(listName, name)) {
+                return lists.get(listName);
+            }
+        }
+        return null;
+    }
+
+    private static void list_exit() {
+        if (currentList != null) {  // save the list if there's a list to save
+            Todo.saveList(currentList);
+        }
+        
+        currentList = null;
+        clear();
+    }
+
     private static boolean list() {
         if (lists.size() == 0 && !sc.hasNext()) {
             error("no lists to report.");
@@ -83,14 +101,7 @@ public class ListDriver {
                 cmd = sc.next();
 
                 if (cmd.equals("exit")) {       // list exit
-                    
-                    if (currentList != null) {  // save the list if there's a list to save
-                        Todo.saveList(currentList);
-                    }
-                    
-                    currentList = null;
-                    clear();
-                    return false;
+                    list_exit();
                 }
 
             } else {
@@ -106,18 +117,21 @@ public class ListDriver {
 
                     line = scanLine.nextLine();
                     sc = new Scanner(line);
-                    cmd = sc.next();                    // list, then, "name"
+                    cmd = restOfLine(sc);                    // list, then, "name"
                 }
                 
             }
 
-            if (!lists.containsKey(cmd)) {
+            Todo nextList = getListByName(cmd);
+            
+            if (nextList == null) {
                 error("No such list exists.");
             } else {
                 Todo.saveList(currentList);
-                currentList = lists.get(cmd);
+                currentList = nextList;
                 currentList.show();
             }
+            
             return false;
         }
         
