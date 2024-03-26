@@ -85,7 +85,24 @@ public class ListDriver {
         clear();
     }
 
+    private static void list_select() {
+        if (currentList != null) {
+            cmd = currentList.getName();        // list "name"
+        } else {
+            System.out.println("Select a list: ");
+            for (String name : lists.keySet()) {
+                System.out.print(name + " ");
+            }
+            System.out.println();
+
+            line = scanLine.nextLine();
+            sc = new Scanner(line);
+            cmd = restOfLine(sc);                    // list, then, "name"
+        }
+    }
+
     private static boolean list() {
+        
         if (lists.size() == 0 && !sc.hasNext()) {
             error("no lists to report.");
             return false;
@@ -106,19 +123,7 @@ public class ListDriver {
 
             } else {
 
-                if (currentList != null) {
-                    cmd = currentList.getName();        // list "name"
-                } else {
-                    System.out.println("Select a list: ");
-                    for (String name : lists.keySet()) {
-                        System.out.print(name + " ");
-                    }
-                    System.out.println();
-
-                    line = scanLine.nextLine();
-                    sc = new Scanner(line);
-                    cmd = restOfLine(sc);                    // list, then, "name"
-                }
+                list_select(); // updates static variable cmd
                 
             }
 
@@ -137,7 +142,55 @@ public class ListDriver {
         
     }
 
+    private static void add() {
 
+        cmd = sc.next();
+        if (cmd.equals("list")) {       // add list
+            cmd = sc.next();                     // add list "cmd"
+            if (!lists.containsKey(cmd)) {
+                lists.put(cmd, new Todo(cmd));
+                Todo.saveList(currentList);
+                currentList = lists.get(cmd);
+            } else {
+                error("A list already exists with name: " + cmd);
+            }
+            
+        }
+        if (cmd.equals("section")) {    // add section
+            try {
+                cmd = restOfLine(sc);                     // add section name (clear the initial whitespace)
+            } catch (Exception e) {
+                error("What section?");
+            }
+            
+            if(currentList == null) {
+                error("no list selected");
+            } else {
+                if (!currentList.hasSection(cmd)) {
+                    // add the section
+                    currentList.addSection(cmd);
+                } else {
+                    error("This list already has a section named: " + cmd);
+                }
+            }
+
+        }
+
+        if (cmd.equals("item")) {               // add item
+            cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
+            if(currentList == null) {
+                error("no list selected");
+            } else {
+                if(!currentList.hasSection(cmd)) {
+                    error("no section exists named: " + cmd);
+                } else {
+                    line = restOfLine(sc);
+                    currentList.addItem(cmd, line);    // add item "section" "item"
+                }
+            }
+        }
+
+    }
 
     private static boolean await_input() {
         prompt_input();
@@ -165,58 +218,14 @@ public class ListDriver {
             }
         }
 
-        else if (cmd.equals("list")) {                                       // list
+        else if (cmd.equals("list")) {     // list
             if (list()) {
                 return true;
             }
         }
 
         else if (cmd.equals("add") || cmd.equals("make")) {            // add
-            cmd = sc.next();
-            if (cmd.equals("list")) {       // add list
-                cmd = sc.next();                     // add list "cmd"
-                if (!lists.containsKey(cmd)) {
-                    lists.put(cmd, new Todo(cmd));
-                    Todo.saveList(currentList);
-                    currentList = lists.get(cmd);
-                } else {
-                    error("A list already exists with name: " + cmd);
-                }
-                
-            }
-            if (cmd.equals("section")) {    // add section
-                try {
-                    cmd = restOfLine(sc);                     // add section name (clear the initial whitespace)
-                } catch (Exception e) {
-                    error("What section?");
-                }
-                
-                if(currentList == null) {
-                    error("no list selected");
-                } else {
-                    if (!currentList.hasSection(cmd)) {
-                        // add the section
-                        currentList.addSection(cmd);
-                    } else {
-                        error("This list already has a section named: " + cmd);
-                    }
-                }
-
-            }
-
-            if (cmd.equals("item")) {               // add item
-                cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
-                if(currentList == null) {
-                    error("no list selected");
-                } else {
-                    if(!currentList.hasSection(cmd)) {
-                        error("no section exists named: " + cmd);
-                    } else {
-                        line = restOfLine(sc);
-                        currentList.addItem(cmd, line);    // add item "section" "item"
-                    }
-                }
-            }
+            add();
         }
 
         else if (cmd.equals("delete") || cmd.equals("remove")) {         // delete
