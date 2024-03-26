@@ -16,6 +16,13 @@ public class ListDriver {
     private static Scanner sc;
     private static String cmd;
 
+    private static void saveLists() {
+        for (Map.Entry<String, Todo> entry : lists.entrySet()) {
+            Todo list = entry.getValue();
+            Todo.saveList(list);
+        }
+    }
+
     private static void accept_input_line() {
         scanLine = new Scanner(System.in);
         line = scanLine.nextLine();
@@ -142,52 +149,61 @@ public class ListDriver {
         
     }
 
+    private static void add_list() {
+        cmd = sc.next();                     // add list "cmd"
+        if (!lists.containsKey(cmd)) {
+            lists.put(cmd, new Todo(cmd));
+            Todo.saveList(currentList);
+            currentList = lists.get(cmd);
+        } else {
+            error("A list already exists with name: " + cmd);
+        }
+    }
+
+    private static void add_section() {
+        try {
+            cmd = restOfLine(sc);                     // add section name (clear the initial whitespace)
+        } catch (Exception e) {
+            error("What section?");
+        }
+        
+        if(currentList == null) {
+            error("no list selected");
+        } else {
+            if (!currentList.hasSection(cmd)) {
+                // add the section
+                currentList.addSection(cmd);
+            } else {
+                error("This list already has a section named: " + cmd);
+            }
+        }
+    }
+
+    private static void add_item() {
+        cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
+        if(currentList == null) {
+            error("no list selected");
+        } else {
+            if(!currentList.hasSection(cmd)) {
+                error("no section exists named: " + cmd);
+            } else {
+                line = restOfLine(sc);
+                currentList.addItem(cmd, line);    // add item "section" "item"
+            }
+        }
+    }
+
     private static void add() {
 
         cmd = sc.next();
         if (cmd.equals("list")) {       // add list
-            cmd = sc.next();                     // add list "cmd"
-            if (!lists.containsKey(cmd)) {
-                lists.put(cmd, new Todo(cmd));
-                Todo.saveList(currentList);
-                currentList = lists.get(cmd);
-            } else {
-                error("A list already exists with name: " + cmd);
-            }
-            
+            add_list();
         }
         if (cmd.equals("section")) {    // add section
-            try {
-                cmd = restOfLine(sc);                     // add section name (clear the initial whitespace)
-            } catch (Exception e) {
-                error("What section?");
-            }
-            
-            if(currentList == null) {
-                error("no list selected");
-            } else {
-                if (!currentList.hasSection(cmd)) {
-                    // add the section
-                    currentList.addSection(cmd);
-                } else {
-                    error("This list already has a section named: " + cmd);
-                }
-            }
-
+            add_section();
         }
-
         if (cmd.equals("item")) {               // add item
-            cmd = sc.next(); // expect a section name.   // add item "section" -- where "section" must be one word (be careful with naming)
-            if(currentList == null) {
-                error("no list selected");
-            } else {
-                if(!currentList.hasSection(cmd)) {
-                    error("no section exists named: " + cmd);
-                } else {
-                    line = restOfLine(sc);
-                    currentList.addItem(cmd, line);    // add item "section" "item"
-                }
-            }
+            add_item();
         }
 
     }
@@ -320,12 +336,8 @@ public class ListDriver {
             e.printStackTrace();
         }
 
-        // save lists
-        for (Map.Entry<String, Todo> entry : lists.entrySet()) {
-            Todo list = entry.getValue();
-            Todo.saveList(list);
-        }
-
+        saveLists();
+        
     }
 
 }
@@ -335,7 +347,7 @@ public class ListDriver {
 *   
 *   REFACTOR: make a string checker? method for checking equality of inputs
 *   REFACTOR: make independent methods for each command.
-* * * * -- refactor in progress. Next task: split up list().
+* * * * -- refactor in progress. Next task: split up add().
 *   
 *   Allow 'expand "sectionName"'
 *
