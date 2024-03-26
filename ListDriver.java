@@ -208,6 +208,84 @@ public class ListDriver {
 
     }
 
+    private static void delete_item() {
+        cmd = restOfLine(sc);
+        cmd = restOfLine(sc);
+        if (currentList != null) {
+            currentList.deleteItem(cmd);  
+        }
+    }
+
+    private static void delete_section() {
+        cmd = restOfLine(sc);
+        if (currentList != null) {
+            currentList.deleteSection(cmd);
+        }
+    }
+
+    private static void delete_list() {
+        cmd = restOfLine(sc);
+        Todo list = null;
+        for (String listName : lists.keySet()) {
+            if (StringHelper.containsSubstring(listName, cmd)) { // grab the first match
+                list = lists.get(listName);
+                lists.remove(list.getName());
+                break;
+            }
+        }
+
+        if (list != null) {
+            if (currentList != null) {
+                if (currentList.getName().equals(list.getName())) {
+                    currentList = null;
+                }
+            }
+            Todo.deleteList(list);
+        } else {
+            if (!Todo.deleteList(cmd)) {
+                error("couldn't delete list " + cmd);
+            }
+        } 
+    }
+
+    private static void delete_unspecified() {
+        // assume I'm trying to remove an item first, then assume a section.
+        cmd = restOfLine(sc);
+        boolean success = false;
+        if (currentList != null) {
+            if (currentList.deleteItem(cmd)) {
+                success = true;
+            } else {
+                if (currentList.deleteSection(cmd)) {
+                    success = true;
+                }
+            }
+        }
+
+        if (!success) {
+            error("couldn't delete item or section named " + cmd);
+        }
+    }
+
+    private static void delete() {
+        cmd = sc.next();
+        if (cmd.equals("item")) {
+            delete_item();
+        } 
+
+        else if (cmd.equals("section")) {
+            delete_section();
+        }
+
+        else if (cmd.equals("list")) {
+            delete_list();
+        }
+
+        else {  
+            delete_unspecified();
+        }
+    }
+
     private static boolean await_input() {
         prompt_input();
 
@@ -245,64 +323,7 @@ public class ListDriver {
         }
 
         else if (cmd.equals("delete") || cmd.equals("remove")) {         // delete
-            cmd = sc.next();
-            if (cmd.equals("item")) {
-                cmd = restOfLine(sc);
-                if (currentList != null) {
-                    currentList.deleteItem(cmd);  
-                }
-            } 
-
-            else if (cmd.equals("section")) {
-                cmd = restOfLine(sc);
-                if (currentList != null) {
-                    currentList.deleteSection(cmd);
-                }
-            }
-
-            else if (cmd.equals("list")) {
-                cmd = restOfLine(sc);
-                Todo list = null;
-                for (String listName : lists.keySet()) {
-                    if (StringHelper.containsSubstring(listName, cmd)) { // grab the first match
-                        list = lists.get(listName);
-                        lists.remove(list.getName());
-                        break;
-                    }
-                }
-
-                if (list != null) {
-                    if (currentList != null) {
-                        if (currentList.getName().equals(list.getName())) {
-                            currentList = null;
-                        }
-                    }
-                    Todo.deleteList(list);
-                } else {
-                    if (!Todo.deleteList(cmd)) {
-                        error("couldn't delete list " + cmd);
-                    }
-                } 
-            }
-
-            else {  // assume I'm trying to remove an item first, then assume a section.
-                cmd = restOfLine(sc);
-                boolean success = false;
-                if (currentList != null) {
-                    if (currentList.deleteItem(cmd)) {
-                        success = true;
-                    } else {
-                        if (currentList.deleteSection(cmd)) {
-                            success = true;
-                        }
-                    }
-                }
-
-                if (!success) {
-                    error("couldn't delete item or section named " + cmd);
-                }
-                
-            }
+            delete();
         }
 
         else if (cmd.equals("collapse")) {
