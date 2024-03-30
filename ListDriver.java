@@ -237,6 +237,15 @@ public class ListDriver {
         }
     }
 
+    private static boolean isYesInput() {
+        return StringHelper.containsSubstring("yes", restOfLine(sc));
+    }
+
+    private static boolean confirmDeleteList(Todo list) {
+        System.out.print("CONFIRM: do you want to delete list " + list.getName() + "? (yes/no) ");
+        return isYesInput();
+    }
+
     private static void delete_list() {
         cmd = restOfLine(sc);
         Todo list = null;
@@ -249,13 +258,21 @@ public class ListDriver {
         }
 
         if (list != null) {
-            if (currentList != null) {
-                if (currentList.getName().equals(list.getName())) {
-                    currentList = null;
+
+            if (confirmDeleteList(list)) {
+                if (currentList != null) {
+                    if (currentList.getName().equals(list.getName())) {
+                        currentList = null;
+                    }
                 }
+                Todo.deleteList(list);
+            } else {
+                error("Will not delete list " + list.getName());
+                return;
             }
-            Todo.deleteList(list);
-        } else {
+
+            
+        } else { // list is null, try to remove persistent files associated with this list.
             if (!Todo.deleteList(cmd)) {
                 error("couldn't delete list " + cmd);
             }
@@ -403,6 +420,7 @@ public class ListDriver {
 *   
 *  
  *  next: add a confirmation prompt for removing lists.
+ * -- INCOMPLETE
  * 
  * then: implement flush: flush (currentlist implied), flush list "listname", flush all
  * 
